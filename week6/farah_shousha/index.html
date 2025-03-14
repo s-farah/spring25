@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Socket.IO Chat</title>
+    <style>
+      body { margin: 0; padding-bottom: 3rem; font-family: sans-serif; }
+      #form { background: rgba(0, 0, 0, 0.15); padding: 0.5rem; position: fixed; bottom: 0; left: 0; right: 0; display: flex; }
+      #input { flex-grow: 1; border-radius: 2rem; padding: 0.5rem; border: 1px solid #ccc; }
+      #form > button { background: #333; color: white; border: none; padding: 0.5rem 1rem; }
+      #messages { list-style-type: none; padding: 0; margin: 0; }
+      #messages > li { padding: 0.5rem 1rem; }
+      #messages > li:nth-child(odd) { background: #f3f3f3; }
+      #typing { font-size: 0.9rem; color: gray; padding-left: 1rem; }
+    </style>
+  </head>
+  <body>
+    <h1>Chat</h1>
+    <input id="username" placeholder="Enter your nickname" autocomplete="off" /><br>
+    <ul id="messages"></ul>
+    <p id="typing"></p>
+    <form id="form" action="">
+      <input id="input" autocomplete="off" /><button>Send</button>
+    </form>
+    
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      var socket = io();
+      var messages = document.getElementById('messages');
+      var form = document.getElementById('form');
+      var input = document.getElementById('input');
+      var typingIndicator = document.getElementById('typing');
+      var username = document.getElementById('username');
+      
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        if (input.value) {
+          var user = username.value || 'Anonymous';
+          socket.emit('chat message', { user: user, message: input.value });
+          input.value = '';
+          socket.emit('stop typing');
+        }
+      });
+      
+      input.addEventListener('input', function() {
+        socket.emit('typing', username.value || 'Someone');
+      });
+      
+      input.addEventListener('blur', function() {
+        socket.emit('stop typing');
+      });
+      
+      socket.on('chat message', function(data) {
+        var item = document.createElement('li');
+        item.textContent = data.user + ': ' + data.message;
+        messages.appendChild(item);
+        window.scrollTo(0, document.body.scrollHeight);
+      });
+      
+      socket.on('typing', function(user) {
+        typingIndicator.textContent = user + ' is typing...';
+      });
+      
+      socket.on('stop typing', function() {
+        typingIndicator.textContent = '';
+      });
+    </script>
+  </body>
+</html>
